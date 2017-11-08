@@ -1,10 +1,10 @@
 
 
 
-SUBSCRIBE: /cabot/pose that will have pose of current location of Cabot
+SUBSCRIBE: /pose that will have pose of current location of Cabot from localizer node geometry_msgs/Pose2D
 
-PUBLISH: /cabot/leftval - float32 left motor velocity
-	/cabot/rightval - float32 right motor velocity
+PUBLISH: /leftval - float32 left motor velocity
+	/rightval - float32 right motor velocity
 
 
 -Currently is not subsribing to anything and will send a right and left motor velocity based on a current location and a final location that is hardcoded 

@@ -3,9 +3,7 @@
 
   <node name="local_planner" pkg="local_planner" type="local_planner" output="screen">
 
-  <rosparam>
-
-  </rosparam>
+	<rosparam command="load" file="$(find local_planner)/config/waypoints.yaml" />
 
  </node>
 </launch>

@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
+<launch>
+
+  <node name="local_planner" pkg="local_planner" type="local_planner" output="screen">
+
+  <rosparam>
+
+  </rosparam>
+
+ </node>
+</launch>

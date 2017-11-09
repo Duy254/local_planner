@@ -19,8 +19,8 @@ class turtlebot():
         self.pose_subscriber = rospy.Subscriber('/pose', Pose2D, self.callback) #2d pose 
         self.pose = Pose2D()
 
-        self.rate = rospy.Rate(30)
-	self.w = rospy.get_param("~base_width", 0.1)
+        self.rate = rospy.Rate(10)
+	self.w = rospy.get_param("~base_width", 0.2)
 	self.distance_tolerance = rospy.get_param("~distance_tolerance", 0.002)
 
 
@@ -72,8 +72,8 @@ class turtlebot():
 		    
 		#Publishing left and right velocities
 
-		self.right = angularz* linearx + self.w / 2 
-		self.left = angularz* linearx - self.w / 2
+		self.right = linearx + angularz*self.w / 2 
+		self.left = linearx - angularz*self.w / 2
 		#rospy.loginfo("publishing: (%s, %s)", strx,stry) 
 		        
 		self.pub_lmotor.publish(self.left)

@@ -28,8 +28,8 @@ class turtlebot():
     #Callback function implementing the pose value received
     def callback(self, data):
         self.pose = data
-        self.pose.x = round(self.pose.position.x, 6)
-        self.pose.y = round(self.pose.position.y, 6)
+        self.pose.x = round(self.pose.x, 6)
+        self.pose.y = round(self.pose.y, 6)
 	
 
     def get_distance(self, goal_x, goal_y):
@@ -59,16 +59,6 @@ class turtlebot():
         #distance_tolerance = 0.0002
         vel_msg = Twist()
 
-	
-
-	#just added to hard code will need to remove once there is a topic to subsribe to that will continually update current pose 
-	
-
-	self.pose.x=42.345
-	self.pose.y=72.32
-	self.pose.theta=0
-
-	#end hardcoded initial position
 
        	while not rospy.is_shutdown() and sqrt(pow((goal_pose.x - self.pose.x), 2) + pow((goal_pose.y - self.pose.y), 2)) >= self.distance_tolerance:
 
@@ -83,11 +73,11 @@ class turtlebot():
 		#Publishing left and right velocities
 
 		self.right = angularz* linearx + self.w / 2 
-		self.left = angularz* linearx + self.w / 2
+		self.left = angularz* linearx - self.w / 2
 		#rospy.loginfo("publishing: (%s, %s)", strx,stry) 
 		        
-		self.pub_lmotor.publish(goal_pose.x)
-		self.pub_rmotor.publish(goal_pose.y)
+		self.pub_lmotor.publish(self.left)
+		self.pub_rmotor.publish(self.right)
 
 
 		self.rate.sleep()

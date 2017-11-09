@@ -7,10 +7,10 @@ PUBLISH: /leftval - float32 left motor velocity
 	/rightval - float32 right motor velocity
 
 
--Currently is not subsribing to anything and will send a right and left motor velocity based on a current location and a final location that is hardcoded 
+-User has to manually publish current position to /pose topic 
 
 -When localization is integrated, current location will be continually updated by subsribing to the node 
 
--Will also need a way to grab goal waypoints might be able to hard code a list of waypoints on here first but will need to update location to test this out. 
+-Grabs waypoints from the .yaml file in the config directory
 
 -MIGHT NEED TO CHANGE MATH EQUATIONS AFTER TESTING (map velocities differently)

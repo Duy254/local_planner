@@ -6,6 +6,7 @@ from std_msgs.msg import Float32
 from geometry_msgs.msg import Pose2D
 from math import pow,atan2,sqrt
 
+way_number=1;
 
 class turtlebot():
 
@@ -20,6 +21,8 @@ class turtlebot():
 
         self.rate = rospy.Rate(30)
 	self.w = rospy.get_param("~base_width", 0.1)
+	self.distance_tolerance = rospy.get_param("~distance_tolerance", 0.002)
+
 
 
     #Callback function implementing the pose value received
@@ -32,27 +35,42 @@ class turtlebot():
     def get_distance(self, goal_x, goal_y):
         distance = sqrt(pow((goal_x - self.pose.x), 2) + pow((goal_y - self.pose.y), 2))
         return distance
-
-    def move2goal(self):
-        goal_pose = Pose2D()	
+		
+    #make a new function that changes the goal waypoint 
+    #def choose_goal(self):
+	
+    
+    #new function that makes the waypoints in parameters a list 
 	
 
-        goal_pose.x = 2
-        goal_pose.y = 3
-        distance_tolerance = 0.00002
+    def move2goal(self):
+	
+	global way_number
+	p=rospy.get_param("/waypoints")
+	strx="/waypoints/1/x"
+	stry="/waypoints/1/y"
+
+	strx=strx.replace("1",str(way_number))
+	stry=stry.replace("1",str(way_number))
+
+        goal_pose = Pose2D()	
+        goal_pose.x = rospy.get_param(strx)
+        goal_pose.y = rospy.get_param(stry)
+        #distance_tolerance = 0.0002
         vel_msg = Twist()
+
 	
 
 	#just added to hard code will need to remove once there is a topic to subsribe to that will continually update current pose 
 	
 
-	self.pose.x=1 
-	self.pose.y=2
+	self.pose.x=42.345
+	self.pose.y=72.32
 	self.pose.theta=0
 
 	#end hardcoded initial position
 
-       	while not rospy.is_shutdown() and sqrt(pow((goal_pose.x - self.pose.x), 2) + pow((goal_pose.y - self.pose.y), 2)) >= distance_tolerance:
+       	while not rospy.is_shutdown() and sqrt(pow((goal_pose.x - self.pose.x), 2) + pow((goal_pose.y - self.pose.y), 2)) >= self.distance_tolerance:
 
 		#Porportional Controller
 		#linear velocity in the x-axis:
@@ -66,19 +84,24 @@ class turtlebot():
 
 		self.right = angularz* linearx + self.w / 2 
 		self.left = angularz* linearx + self.w / 2
-		rospy.loginfo("publishing: (%f, %f)", self.right, self.left) 
+		#rospy.loginfo("publishing: (%s, %s)", strx,stry) 
 		        
-		self.pub_lmotor.publish(self.left)
-		self.pub_rmotor.publish(self.right)
+		self.pub_lmotor.publish(goal_pose.x)
+		self.pub_rmotor.publish(goal_pose.y)
 
 
 		self.rate.sleep()
 
-      	#Stopping our robot after the movement is over
-	self.right=0
-	self.left=0
-	self.pub_lmotor.publish(self.left)
-	self.pub_rmotor.publish(self.right)
+      	#Stopping our robot after the movement is over and no more waypoints to go to
+	
+ 	if (way_number >= len(p)):
+		self.right=0
+		self.left=0
+		self.pub_lmotor.publish(self.left)
+		self.pub_rmotor.publish(self.right)
+	else: 
+		way_number = way_number+1
+		turtlebot().move2goal()
 
 	rospy.spin()
 

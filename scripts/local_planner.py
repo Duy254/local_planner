@@ -5,6 +5,7 @@ from geometry_msgs.msg  import Twist
 from std_msgs.msg import Float32
 from geometry_msgs.msg import Pose2D
 from math import pow,atan2,sqrt
+from arduino_msg.msg import Motor
 
 way_number=1;
 
@@ -16,8 +17,12 @@ class turtlebot():
 	
       	self.pub_lmotor = rospy.Publisher('/leftvel', Float32, queue_size=10)
         self.pub_rmotor = rospy.Publisher('/rightvel', Float32, queue_size=10)
+
+	self.pub_motor=rospy.Publisher('/motorSpeed', Motor, queue_size=10)
         self.pose_subscriber = rospy.Subscriber('/pose', Pose2D, self.callback) #2d pose 
+
         self.pose = Pose2D()
+
 
         self.rate = rospy.Rate(10)
 	self.w = rospy.get_param("~base_width", 0.2)
@@ -57,14 +62,17 @@ class turtlebot():
         goal_pose.x = rospy.get_param(strx)
         goal_pose.y = rospy.get_param(stry)
         #distance_tolerance = 0.0002
-        vel_msg = Twist()
+        #vel_msg = Twist()
+
+	goal_vel = Motor()
+
 
 
        	while not rospy.is_shutdown() and sqrt(pow((goal_pose.x - self.pose.x), 2) + pow((goal_pose.y - self.pose.y), 2)) >= self.distance_tolerance:
 
 		#Porportional Controller
 		#linear velocity in the x-axis:
-		linearx= 1.5* sqrt(pow((goal_pose.x - self.pose.x), 2) + pow((goal_pose.y - self.pose.y), 2))
+		linearx= 0.1* sqrt(pow((goal_pose.x - self.pose.x), 2) + pow((goal_pose.y - self.pose.y), 2))
 		    
 
 		#angular velocity in the z-axis:
@@ -78,6 +86,10 @@ class turtlebot():
 		        
 		self.pub_lmotor.publish(self.left)
 		self.pub_rmotor.publish(self.right)
+		
+		goal_vel.left_speed=self.left
+		goal_vel.right_speed=self.right
+		self.pub_motor.publish(goal_vel)
 
 
 		self.rate.sleep()
@@ -89,6 +101,11 @@ class turtlebot():
 		self.left=0
 		self.pub_lmotor.publish(self.left)
 		self.pub_rmotor.publish(self.right)
+
+		goal_vel.left_speed=self.left
+		goal_vel.right_speed=self.right
+		self.pub_motor.publish(goal_vel)
+		
 	else: 
 		way_number = way_number+1
 		turtlebot().move2goal()

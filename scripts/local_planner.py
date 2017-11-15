@@ -4,7 +4,7 @@ from geometry_msgs.msg  import Twist
 #from turtlesim.msg import Pose
 from std_msgs.msg import Float32
 from geometry_msgs.msg import Pose2D
-from math import pow,atan2,sqrt
+from math import pow,atan2,sqrt,acos, atan
 from arduino_msg.msg import Motor
 from nav_msgs.msg import Odometry
 
@@ -15,46 +15,28 @@ class turtlebot():
     def __init__(self):
         #Creating our node,publisher and subscriber
         rospy.init_node('local_planner', anonymous=True)
-	
-      	self.pub_lmotor = rospy.Publisher('/leftvel', Float32, queue_size=10)
-        self.pub_rmotor = rospy.Publisher('/rightvel', Float32, queue_size=10)
 
 	self.pub_motor=rospy.Publisher('/motorSpeed', Motor, queue_size=10)
-        #self.pose_subscriber = rospy.Subscriber('/pose', Pose2D, self.callback) #2d pose 
-
+      
 	#subscribe to simulation instead need navmsg
 	self.pose_subscriber=rospy.Subscriber('/odom', Odometry, self.callback) #Odom
-	
 
 	#add a publisher for gazebo 
-	self.pub_twist = rospy.Publisher('cmd_vel', Twist, queue_size=10)
+	self.pub_twist = rospy.Publisher('/cmd_vel', Twist, queue_size=10)
 
         #self.pose = Pose2D()
 	self.odom=Odometry()
-
 
         self.rate = rospy.Rate(10)
 	self.w = rospy.get_param("~base_width", 0.2)
 	self.distance_tolerance = rospy.get_param("~distance_tolerance", 0.002)
 
-
-
     #Callback function implementing the pose value received
     def callback(self, data):
-        self.pose = data
+        self.odom = data
         self.odom.pose.pose.position.x = round(self.odom.pose.pose.position.x, 6)
         self.odom.pose.pose.position.y = round(self.odom.pose.pose.position.y, 6)
 	
-
-    def get_distance(self, goal_x, goal_y):
-        distance = sqrt(pow((goal_x - self.pose.x), 2) + pow((goal_y - self.pose.y), 2))
-        return distance
-		
-    #make a new function that changes the goal waypoint 
-    #def choose_goal(self):
-	
-    
-    #new function that makes the waypoints in parameters a list 
 	
 
     def move2goal(self):
@@ -69,43 +51,38 @@ class turtlebot():
 
         goal_pose = Pose2D()	
         goal_pose.x = rospy.get_param(strx)
-        goal_pose.y = rospy.get_param(stry)
-        #distance_tolerance = 0.0002
-        #vel_msg = Twist()
+        goal_pose.y = rospy.get_param(stry)    
 
 	goal_vel = Motor()
 
 	goal_twist=Twist()
 
-
-
-       	while not rospy.is_shutdown() and sqrt(pow((goal_pose.x - self.odom.pose.pose.position.x), 2) + pow((goal_pose.y - self.odom.pose.pose.position.y), 2)) >= self.distance_tolerance:
+       	while not rospy.is_shutdown() and sqrt(pow((goal_pose.x - self.odom.pose.pose.position.x), 2) + pow((goal_pose.y - self.odom.pose.pose.position.y), 2)) >= 0.05:
+	
 
 		#Porportional Controller
 		#linear velocity in the x-axis:
-		linearx= 1.5* sqrt(pow((goal_pose.x - self.odom.pose.pose.position.x), 2) + pow((goal_pose.y - self.odom.pose.pose.position.y), 2))
-		    
+		linearx= 0.1* sqrt(pow((goal_pose.x - self.odom.pose.pose.position.x), 2) + pow((goal_pose.y - self.odom.pose.pose.position.y), 2))
+			    
 
 		#angular velocity in the z-axis:
-		angularz = 4 * (atan2(goal_pose.y - self.odom.pose.pose.position.y, goal_pose.x - self.odom.pose.pose.position.x)) #- self.odom.pose.pose.orientation.z)
-		    
-		#Publishing left and right velocities
+		
+		angularz = -0.8* (atan2(goal_pose.y - self.odom.pose.pose.position.y, goal_pose.x - self.odom.pose.pose.position.x) - acos(self.odom.pose.pose.orientation.w)*2) # quaternion to angle
+	
 
+		#Publishing left and right velocities
 		self.right = linearx + angularz*self.w / 2 
 		self.left = linearx - angularz*self.w / 2
-		#rospy.loginfo("publishing: (%s, %s)", strx,stry) 
-		        
-		self.pub_lmotor.publish(self.left)
-		self.pub_rmotor.publish(self.right)
-		
+
 		goal_vel.left_speed=self.left
 		goal_vel.right_speed=self.right
 		self.pub_motor.publish(goal_vel)
 
+		
+
 		goal_twist.linear.x=linearx
 		goal_twist.angular.z=angularz
 		self.pub_twist.publish(goal_twist)
-
 
 		self.rate.sleep()
 
@@ -114,12 +91,14 @@ class turtlebot():
  	if (way_number >= len(p)):
 		self.right=0
 		self.left=0
-		self.pub_lmotor.publish(self.left)
-		self.pub_rmotor.publish(self.right)
 
 		goal_vel.left_speed=self.left
 		goal_vel.right_speed=self.right
 		self.pub_motor.publish(goal_vel)
+
+		goal_twist.linear.x=0;
+		goal_twist.angular.z=0;
+		self.pub_twist.publish(goal_twist)
 		
 	else: 
 		way_number = way_number+1

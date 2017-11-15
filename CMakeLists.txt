@@ -13,6 +13,7 @@ find_package(catkin REQUIRED COMPONENTS
   std_msgs
   tf
   arduino_msg
+  nav_msgs
 )
 
 

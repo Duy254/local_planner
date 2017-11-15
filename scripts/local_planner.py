@@ -6,6 +6,7 @@ from std_msgs.msg import Float32
 from geometry_msgs.msg import Pose2D
 from math import pow,atan2,sqrt
 from arduino_msg.msg import Motor
+from nav_msgs.msg import Odometry
 
 way_number=1;
 
@@ -19,9 +20,17 @@ class turtlebot():
         self.pub_rmotor = rospy.Publisher('/rightvel', Float32, queue_size=10)
 
 	self.pub_motor=rospy.Publisher('/motorSpeed', Motor, queue_size=10)
-        self.pose_subscriber = rospy.Subscriber('/pose', Pose2D, self.callback) #2d pose 
+        #self.pose_subscriber = rospy.Subscriber('/pose', Pose2D, self.callback) #2d pose 
 
-        self.pose = Pose2D()
+	#subscribe to simulation instead need navmsg
+	self.pose_subscriber=rospy.Subscriber('/odom', Odometry, self.callback) #Odom
+	
+
+	#add a publisher for gazebo 
+	self.pub_twist = rospy.Publisher('cmd_vel', Twist, queue_size=10)
+
+        #self.pose = Pose2D()
+	self.odom=Odometry()
 
 
         self.rate = rospy.Rate(10)
@@ -33,8 +42,8 @@ class turtlebot():
     #Callback function implementing the pose value received
     def callback(self, data):
         self.pose = data
-        self.pose.x = round(self.pose.x, 6)
-        self.pose.y = round(self.pose.y, 6)
+        self.odom.pose.pose.position.x = round(self.odom.pose.pose.position.x, 6)
+        self.odom.pose.pose.position.y = round(self.odom.pose.pose.position.y, 6)
 	
 
     def get_distance(self, goal_x, goal_y):
@@ -66,17 +75,19 @@ class turtlebot():
 
 	goal_vel = Motor()
 
+	goal_twist=Twist()
 
 
-       	while not rospy.is_shutdown() and sqrt(pow((goal_pose.x - self.pose.x), 2) + pow((goal_pose.y - self.pose.y), 2)) >= self.distance_tolerance:
+
+       	while not rospy.is_shutdown() and sqrt(pow((goal_pose.x - self.odom.pose.pose.position.x), 2) + pow((goal_pose.y - self.odom.pose.pose.position.y), 2)) >= self.distance_tolerance:
 
 		#Porportional Controller
 		#linear velocity in the x-axis:
-		linearx= 0.1* sqrt(pow((goal_pose.x - self.pose.x), 2) + pow((goal_pose.y - self.pose.y), 2))
+		linearx= 1.5* sqrt(pow((goal_pose.x - self.odom.pose.pose.position.x), 2) + pow((goal_pose.y - self.odom.pose.pose.position.y), 2))
 		    
 
 		#angular velocity in the z-axis:
-		angularz = 4 * (atan2(goal_pose.y - self.pose.y, goal_pose.x - self.pose.x) - self.pose.theta)
+		angularz = 4 * (atan2(goal_pose.y - self.odom.pose.pose.position.y, goal_pose.x - self.odom.pose.pose.position.x)) #- self.odom.pose.pose.orientation.z)
 		    
 		#Publishing left and right velocities
 
@@ -90,6 +101,10 @@ class turtlebot():
 		goal_vel.left_speed=self.left
 		goal_vel.right_speed=self.right
 		self.pub_motor.publish(goal_vel)
+
+		goal_twist.linear.x=linearx
+		goal_twist.angular.z=angularz
+		self.pub_twist.publish(goal_twist)
 
 
 		self.rate.sleep()

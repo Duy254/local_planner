@@ -7,7 +7,7 @@ from geometry_msgs.msg import Pose2D
 import math 
 
 pub = None
-width = .254 #width of CaBot
+width = .2 #width of CaBot in meters
 
 # totX = 0
 # totY = 0
@@ -22,7 +22,6 @@ def getVelocities(motor):
     pose.y += (0.5 * (motor.left_speed + motor.right_speed) * math.sin(pose.theta)) * dt
     pose.theta += dtheta
     pose.theta = constrain(pose.theta)
-    #print "FUCK ROS"
     pub.publish(pose)
     
     # totX += pose.x

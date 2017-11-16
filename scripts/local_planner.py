@@ -4,7 +4,7 @@ from geometry_msgs.msg  import Twist
 #from turtlesim.msg import Pose
 from std_msgs.msg import Float32
 from geometry_msgs.msg import Pose2D
-from math import pow,atan2,sqrt,acos, atan
+from math import pow,atan2,sqrt,acos, atan, pi
 from arduino_msg.msg import Motor
 from nav_msgs.msg import Odometry
 
@@ -29,15 +29,22 @@ class turtlebot():
 
         self.rate = rospy.Rate(10)
 	self.w = rospy.get_param("~base_width", 0.2)
-	self.distance_tolerance = rospy.get_param("~distance_tolerance", 0.002)
+	#self.distance_tolerance = rospy.get_param("~distance_tolerance", 0.002)
+	self.distance_tolerance=0.05
 
     #Callback function implementing the pose value received
     def callback(self, data):
         self.odom = data
         self.odom.pose.pose.position.x = round(self.odom.pose.pose.position.x, 6)
         self.odom.pose.pose.position.y = round(self.odom.pose.pose.position.y, 6)
-	
-	
+
+    def constrain(rad):
+    	while (rad < -math.pi):
+        	rad += 2*math.pi
+   	while (rad > math.pi):
+        	rad -= 2*math.pi
+    	return rad
+		
 
     def move2goal(self):
 	
@@ -57,29 +64,38 @@ class turtlebot():
 
 	goal_twist=Twist()
 
-       	while not rospy.is_shutdown() and sqrt(pow((goal_pose.x - self.odom.pose.pose.position.x), 2) + pow((goal_pose.y - self.odom.pose.pose.position.y), 2)) >= 0.05:
-	
+	if (way_number<len(p)):
+		self.distance_tolerance=0.8
 
+       	while not rospy.is_shutdown() and sqrt(pow((goal_pose.x - self.odom.pose.pose.position.x), 2) + pow((goal_pose.y - self.odom.pose.pose.position.y), 2)) >= self.distance_tolerance:
+	
 		#Porportional Controller
 		#linear velocity in the x-axis:
-		linearx= 0.1* sqrt(pow((goal_pose.x - self.odom.pose.pose.position.x), 2) + pow((goal_pose.y - self.odom.pose.pose.position.y), 2))
+		linearx= 1* sqrt(pow((goal_pose.x - self.odom.pose.pose.position.x), 2) + pow((goal_pose.y - self.odom.pose.pose.position.y), 2))
 			    
-
 		#angular velocity in the z-axis:
 		
-		angularz = -0.8* (atan2(goal_pose.y - self.odom.pose.pose.position.y, goal_pose.x - self.odom.pose.pose.position.x) - acos(self.odom.pose.pose.orientation.w)*2) # quaternion to angle
+		simangle=acos(self.odom.pose.pose.orientation.w)*2  # quaternion to angle
+		goalangle=atan2(goal_pose.y - self.odom.pose.pose.position.y, goal_pose.x - self.odom.pose.pose.position.x)
+		
+		goalangle = constrain(goalangle)
+		simangle = constrain(simangle)
+		
+		if(simangle>2*pi):
+			simangle=2*pi
+		if (simangle>pi):
+			simangle-=2*pi
+			
+		angularz = 1* (goalangle-simangle) 
 	
-
 		#Publishing left and right velocities
 		self.right = linearx + angularz*self.w / 2 
 		self.left = linearx - angularz*self.w / 2
 
-		goal_vel.left_speed=self.left
-		goal_vel.right_speed=self.right
+		goal_vel.left_speed=simangle
+		goal_vel.right_speed=atan2(goal_pose.y - self.odom.pose.pose.position.y, goal_pose.x - self.odom.pose.pose.position.x) 
 		self.pub_motor.publish(goal_vel)
-
 		
-
 		goal_twist.linear.x=linearx
 		goal_twist.angular.z=angularz
 		self.pub_twist.publish(goal_twist)

@@ -50,16 +50,18 @@ class turtlebot():
 
     # Callback function implementing the pose value received
     def callback(self, data):
+
         if (self.mode == realMode):
+            print "Callback"
             #self.pose2D = data
-            self.pose.x = round(self.pose2D.x, 6)
-            self.pose.y = round(self.pose2D.x, 6)
+            self.pose.x = round(data.x, 6)
+            self.pose.y = round(data.y, 6)
             self.pose.theta = round(data.theta, 6)
 
         if (self.mode == simMode):
             #self.odom = data
-            self.pose.x = round(self.odom.pose.pose.position.x, 6)
-            self.pose.y = round(self.odom.pose.pose.position.y, 6)
+            self.pose.x = round(data.pose.pose.position.x, 6)
+            self.pose.y = round(data.pose.pose.position.y, 6)
             self.pose.quatW = round(data.pose.pose.orientation.w, 6)
 
     def pubMotors(self, linearX, angularZ):
@@ -97,16 +99,20 @@ class turtlebot():
         while not rospy.is_shutdown() and sqrt(
                         pow((goal_pose.x - self.pose.x), 2) + pow((goal_pose.y - self.pose.y), 2)) >= 0.05:
 
+            print "X: " + str(self.pose.x)
+            print "Y: " + str(self.pose.y)
+            print "theta: " + str( self.pose.theta)
+
             # Porportional Controller
             # linear velocity in the x-axis:
             linearx = 0.1 * sqrt(pow((goal_pose.x - self.pose.x), 2) + pow((goal_pose.y - self.pose.y), 2))
             # linearx= 0.1* sqrt(pow((goal_pose.x - self.odom.pose.pose.position.x), 2) + pow((goal_pose.y - self.odom.pose.pose.position.y), 2))
 
             # angular velocity in the z-axis:
-            if (self.mode == simMode):
-                angularz = -0.8* (atan2(goal_pose.y - self.pose.y, goal_pose.x - self.pose.x) - acos(self.pose.quatW)*2) # quaternion to angle
+            if self.mode == simMode:
+                angularz = -0.8 * (atan2(goal_pose.y - self.pose.y, goal_pose.x - self.pose.x) - acos(self.pose.quatW)*2) # quaternion to angle
 
-            if (self.mode == realMode):
+            if self.mode == realMode:
                 angularz = -0.8 * (atan2(goal_pose.y - self.pose.y, goal_pose.x - self.pose.x) - self.pose.theta)
 
 

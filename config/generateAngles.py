@@ -12,7 +12,7 @@ def angle_between(v1, v2):
     v2_u = unit_vector(v2)
 
      #return degrees if user entered "d" as 2nd argument
-    if len(sys.argv) > 2 and sys.argv[2] == 'd':
+    if len(sys.argv) > 3 and sys.argv[3] == 'd':
         return np.rad2deg(np.arccos(np.clip(np.dot(v1_u, v2_u), -1.0, 1.0)))
     else: #return radians
         return np.arccos(np.clip(np.dot(v1_u, v2_u), -1.0, 1.0))
@@ -44,7 +44,7 @@ if (len(sys.argv) > 1):
 
     #write data to file
     print tupleList
-    f = open('waypoints_test.yaml', 'w')
+    f = open(sys.argv[2] + ".yaml", 'w')
     for t in range(0, len(tupleList)):
         n = str(t + 1)
         f.write("/waypoints/" + n + "/x: " + str(tupleList[t][0]) + "\n")

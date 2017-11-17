@@ -25,8 +25,6 @@ class turtlebot():
         # Creating our node,publisher and subscriber
         rospy.init_node('local_planner', anonymous=True)
 
-        #self.pose_subscriber = None
-        #self.pub_twist = None
         self.pub_motor = rospy.Publisher('motorSpeed', Motor, queue_size=10)
         self.pub_twist = rospy.Publisher('cmd_vel', Twist, queue_size = 10)  # add a publisher for gazebo
         self.pose = Pose()
@@ -42,8 +40,6 @@ class turtlebot():
         if self.mode == simMode:
              # subscribe to simulation instead need navmsg
             self.pose_subscriber = rospy.Subscriber('odom', Odometry, self.callback)
-
-            #self.pub_twist = rospy.Publisher('cmd_vel', Twist, queue_size = 10)
 
         self.w = rospy.get_param("~base_width", 0.2)
         self.distance_tolerance = rospy.get_param("~distance_tolerance", 0.002)
@@ -92,9 +88,6 @@ class turtlebot():
         goal_pose.x = rospy.get_param(strx)
         goal_pose.y = rospy.get_param(stry)
 
-        # goal_vel = Motor()
-        # goal_twist = Twist()
-
         # while not rospy.is_shutdown() and sqrt(pow((goal_pose.x - self.odom.pose.pose.position.x), 2) + pow((goal_pose.y - self.odom.pose.pose.position.y), 2)) >= 0.05:
         while not rospy.is_shutdown() and sqrt(
                         pow((goal_pose.x - self.pose.x), 2) + pow((goal_pose.y - self.pose.y), 2)) >= 0.05:
@@ -118,34 +111,11 @@ class turtlebot():
 
             # Publishing left and right velocities
             self.pubMotors(linearx, angularz)
-            # self.right = linearx + angularz * self.w / 2
-            # self.left = linearx - angularz * self.w / 2
-            #
-            # goal_vel.left_speed = self.left
-            # goal_vel.right_speed = self.right
-            # self.pub_motor.publish(goal_vel)
-            #
-            # goal_twist.linear.x=linearx
-            # goal_twist.angular.z=angularz
-            # self.pub_twist.publish(goal_twist)
-
             self.rate.sleep()
 
         # Stopping our robot after the movement is over and no more waypoints to go to
         if (way_number >= len(p)):
             self.pubMotors(0, 0)
-
-            # self.right = 0
-            # self.left = 0
-            #
-            # goal_vel.left_speed = self.left
-            # goal_vel.right_speed = self.right
-            # self.pub_motor.publish(goal_vel)
-            #
-            # goal_twist.linear.x=0;
-            # goal_twist.angular.z=0;
-            # self.pub_twist.publish(goal_twist)
-
         else:
             way_number = way_number + 1
             turtlebot().move2goal()

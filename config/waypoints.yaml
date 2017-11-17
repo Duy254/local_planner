@@ -1,4 +1,12 @@
-/waypoints/1/x: 2
-/waypoints/1/y: 3
-/waypoints/2/x: 4
-/waypoints/2/y: 5
+/waypoints/1/x: 0.0
+/waypoints/1/y: 0.0
+/waypoints/1/theta: 0
+/waypoints/2/x: 19.0
+/waypoints/2/y: 0.0
+/waypoints/2/theta: 1.57079632679
+/waypoints/3/x: 19.0
+/waypoints/3/y: 8.0
+/waypoints/3/theta: 1.96931877246
+/waypoints/4/x: 0.0
+/waypoints/4/y: 0.0
+/waypoints/4/theta: 0

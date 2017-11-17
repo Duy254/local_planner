@@ -38,13 +38,13 @@ class turtlebot():
         self.odom.pose.pose.position.x = round(self.odom.pose.pose.position.x, 6)
         self.odom.pose.pose.position.y = round(self.odom.pose.pose.position.y, 6)
 
-    def constrain(rad):
-    	while (rad < -math.pi):
-        	rad += 2*math.pi
-   	while (rad > math.pi):
-        	rad -= 2*math.pi
-    	return rad
-		
+    def limitVel(linearV):
+        if(linearV>5):
+		linearV=5;
+	if(linearV<-5):
+		linearV=-5
+    		
+    		
 
     def move2goal(self):
 	
@@ -71,22 +71,19 @@ class turtlebot():
 	
 		#Porportional Controller
 		#linear velocity in the x-axis:
-		linearx= 1* sqrt(pow((goal_pose.x - self.odom.pose.pose.position.x), 2) + pow((goal_pose.y - self.odom.pose.pose.position.y), 2))
+		linearx= 0.05* sqrt(pow((goal_pose.x - self.odom.pose.pose.position.x), 2) + pow((goal_pose.y - self.odom.pose.pose.position.y), 2))
 			    
 		#angular velocity in the z-axis:
 		
 		simangle=acos(self.odom.pose.pose.orientation.w)*2  # quaternion to angle
 		goalangle=atan2(goal_pose.y - self.odom.pose.pose.position.y, goal_pose.x - self.odom.pose.pose.position.x)
 		
-		goalangle = constrain(goalangle)
-		simangle = constrain(simangle)
-		
 		if(simangle>2*pi):
 			simangle=2*pi
 		if (simangle>pi):
 			simangle-=2*pi
 			
-		angularz = 1* (goalangle-simangle) 
+		angularz = -0.8* (goalangle-simangle) 
 	
 		#Publishing left and right velocities
 		self.right = linearx + angularz*self.w / 2 

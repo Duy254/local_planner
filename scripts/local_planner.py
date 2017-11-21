@@ -4,7 +4,7 @@ from geometry_msgs.msg import Twist
 # from turtlesim.msg import Pose
 from std_msgs.msg import Float32
 from geometry_msgs.msg import Pose2D
-from math import pow, atan2, sqrt, acos, atan
+from math import *
 from arduino_msg.msg import Motor
 from nav_msgs.msg import Odometry
 
@@ -48,7 +48,7 @@ class turtlebot():
     def callback(self, data):
 
         if (self.mode == realMode):
-            print "Callback"
+            #print "Callback"
             #self.pose2D = data
             self.pose.x = round(data.x, 6)
             self.pose.y = round(data.y, 6)
@@ -75,6 +75,13 @@ class turtlebot():
         goal_twist.angular.z = angularZ
         self.pub_twist.publish(goal_twist)
 
+    def constrain(self, angl, lowBound, hiBound):
+        while angl < lowBound:
+            angl += 2*pi
+        while angl > hiBound:
+            angl -= 2*pi
+        return angl
+
     def move2goal(self):
         global way_number
         p = rospy.get_param("/waypoints")
@@ -92,9 +99,7 @@ class turtlebot():
         while not rospy.is_shutdown() and sqrt(
                         pow((goal_pose.x - self.pose.x), 2) + pow((goal_pose.y - self.pose.y), 2)) >= 0.05:
 
-            print "X: " + str(self.pose.x)
-            print "Y: " + str(self.pose.y)
-            print "theta: " + str( self.pose.theta)
+
 
             # Porportional Controller
             # linear velocity in the x-axis:
@@ -102,12 +107,19 @@ class turtlebot():
             # linearx= 0.1* sqrt(pow((goal_pose.x - self.odom.pose.pose.position.x), 2) + pow((goal_pose.y - self.odom.pose.pose.position.y), 2))
 
             # angular velocity in the z-axis:
+            angularz = 0
             if self.mode == simMode:
                 angularz = -0.8 * (atan2(goal_pose.y - self.pose.y, goal_pose.x - self.pose.x) - acos(self.pose.quatW)*2) # quaternion to angle
 
             if self.mode == realMode:
                 angularz = -0.8 * (atan2(goal_pose.y - self.pose.y, goal_pose.x - self.pose.x) - self.pose.theta)
 
+            angularz = self.constrain(angularz,-pi, pi)
+
+            print "X: " , self.pose.x
+            print "Y: " , self.pose.y
+            print "theta: ", self.pose.theta
+            print "angular, z: ", angularz
 
             # Publishing left and right velocities
             self.pubMotors(linearx, angularz)

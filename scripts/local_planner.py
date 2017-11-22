@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 import rospy
 from geometry_msgs.msg import Twist
-# from turtlesim.msg import Pose
 from std_msgs.msg import Float32
 from geometry_msgs.msg import Pose2D
 from math import *
@@ -24,7 +23,7 @@ class turtlebot():
     def __init__(self):
         # Creating our node,publisher and subscriber
         rospy.init_node('local_planner', anonymous=True)
-
+        self.wPoints = rospy.get_param("/waypoints")
         self.pub_motor = rospy.Publisher('motorSpeed', Motor, queue_size=10)
         self.pub_twist = rospy.Publisher('cmd_vel', Twist, queue_size = 10)  # add a publisher for gazebo
         self.pose = Pose()
@@ -84,26 +83,18 @@ class turtlebot():
 
     def move2goal(self):
         global way_number
-        p = rospy.get_param("/waypoints")
-        strx = "/waypoints/1/x"
-        stry = "/waypoints/1/y"
-
-        strx = strx.replace("1", str(way_number))
-        stry = stry.replace("1", str(way_number))
-
+        #print way_number
+        point = self.wPoints[str(way_number)] #get current point from waypoints dict
         goal_pose = Pose2D()
-        goal_pose.x = rospy.get_param(strx)
-        goal_pose.y = rospy.get_param(stry)
+        goal_pose.x = point["x"]
+        goal_pose.y = point["y"]
 
-        # while not rospy.is_shutdown() and sqrt(pow((goal_pose.x - self.odom.pose.pose.position.x), 2) + pow((goal_pose.y - self.odom.pose.pose.position.y), 2)) >= 0.05:
         while not rospy.is_shutdown() and sqrt(
                         pow((goal_pose.x - self.pose.x), 2) + pow((goal_pose.y - self.pose.y), 2)) >= 0.05:
 
-
-
             # Porportional Controller
             # linear velocity in the x-axis:
-            linearx = 0.1 * sqrt(pow((goal_pose.x - self.pose.x), 2) + pow((goal_pose.y - self.pose.y), 2))
+            linearx = 0.8 * sqrt(pow((goal_pose.x - self.pose.x), 2) + pow((goal_pose.y - self.pose.y), 2))
             # linearx= 0.1* sqrt(pow((goal_pose.x - self.odom.pose.pose.position.x), 2) + pow((goal_pose.y - self.odom.pose.pose.position.y), 2))
 
             # angular velocity in the z-axis:
@@ -114,22 +105,27 @@ class turtlebot():
             if self.mode == realMode:
                 angularz = -0.8 * (atan2(goal_pose.y - self.pose.y, goal_pose.x - self.pose.x) - self.pose.theta)
 
-            angularz = self.constrain(angularz,-pi, pi)
+            angularz = self.constrain(angularz, -pi, pi)
 
             print "X: " , self.pose.x
             print "Y: " , self.pose.y
             print "theta: ", self.pose.theta
             print "angular, z: ", angularz
+            print "waypoint:", way_number
+            print self.wPoints
 
             # Publishing left and right velocities
             self.pubMotors(linearx, angularz)
             self.rate.sleep()
 
         # Stopping our robot after the movement is over and no more waypoints to go to
-        if (way_number >= len(p)):
+        way_number += 1
+
+        if (way_number >= len(self.wPoints) + 1):
+            print "stopped"
             self.pubMotors(0, 0)
         else:
-            way_number = way_number + 1
+            #TODO: make this iterative
             turtlebot().move2goal()
 
         rospy.spin()

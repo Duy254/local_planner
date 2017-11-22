@@ -1,11 +1,14 @@
 #!/usr/bin/env python
 import rospy
+import numpy as np
 from geometry_msgs.msg import Twist
 from std_msgs.msg import Float32
 from geometry_msgs.msg import Pose2D
 from math import *
 from arduino_msg.msg import Motor
 from nav_msgs.msg import Odometry
+from navcog_msg.msg import SimplifiedOdometry
+
 
 way_number = 1;
 realMode = "real"
@@ -34,7 +37,8 @@ class turtlebot():
         self.mode = rospy.get_param("~mode", "real")
 
         if self.mode == realMode:
-            self.pose_subscriber = rospy.Subscriber('pose', Pose2D, self.callback)
+            #self.pose_subscriber = rospy.Subscriber('pose', Pose2D, self.callback)
+           self.pose_subscriber = rospy.Subscriber('/Navcog/odometry', SimplifiedOdometry, self.callback)
 
         if self.mode == simMode:
              # subscribe to simulation instead need navmsg
@@ -49,9 +53,9 @@ class turtlebot():
         if (self.mode == realMode):
             #print "Callback"
             #self.pose2D = data
-            self.pose.x = round(data.x, 6)
-            self.pose.y = round(data.y, 6)
-            self.pose.theta = round(data.theta, 6)
+            self.pose.x = round(data.pose.x, 6)
+            self.pose.y = round(data.pose.y, 6)
+            self.pose.theta = np.deg2rad(round(data.orientation, 6))
 
         if (self.mode == simMode):
             #self.odom = data

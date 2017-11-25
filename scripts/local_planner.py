@@ -13,6 +13,7 @@ from navcog_msg.msg import SimplifiedOdometry
 way_number = 1;
 realMode = "real"
 simMode = "simulation"
+maxSpeed = 0.2
 
 #pose can either be assigned info from twist or a pose2D msg
 class Pose:
@@ -32,13 +33,14 @@ class turtlebot():
         self.pose = Pose()
         self.pose2D = Pose2D()
         self.odom = Odometry()
+        self.phone = 0
 
         self.rate = rospy.Rate(10)
         self.mode = rospy.get_param("~mode", "real")
 
         if self.mode == realMode:
             #self.pose_subscriber = rospy.Subscriber('pose', Pose2D, self.callback)
-           self.pose_subscriber = rospy.Subscriber('/Navcog/odometry', SimplifiedOdometry, self.callback)
+           self.pose_subscriber = rospy.Subscriber('odometry', SimplifiedOdometry, self.callback)
 
         if self.mode == simMode:
              # subscribe to simulation instead need navmsg
@@ -49,13 +51,15 @@ class turtlebot():
 
     # Callback function implementing the pose value received
     def callback(self, data):
-
+        #print "Callback"
         if (self.mode == realMode):
-            #print "Callback"
+
             #self.pose2D = data
             self.pose.x = round(data.pose.x, 6)
             self.pose.y = round(data.pose.y, 6)
-            self.pose.theta = np.deg2rad(round(data.orientation, 6))
+            self.pose.theta = np.deg2rad(90 - data.orientation)
+            self.pose.theta = self.constrain(self.pose.theta, -pi, pi)
+            self.phone = round(data.orientation, 6)
 
         if (self.mode == simMode):
             #self.odom = data
@@ -73,10 +77,10 @@ class turtlebot():
         goal_vel.right_speed = rightVel
         self.pub_motor.publish(goal_vel)
 
-        # if (self.mode == simMode): #publish twist for gazebo simulation
-        goal_twist.linear.x = linearX
-        goal_twist.angular.z = angularZ
-        self.pub_twist.publish(goal_twist)
+        if (self.mode == simMode): #publish twist for gazebo simulation
+            goal_twist.linear.x = linearX
+            goal_twist.angular.z = angularZ
+            self.pub_twist.publish(goal_twist)
 
     def constrain(self, angl, lowBound, hiBound):
         while angl < lowBound:
@@ -98,25 +102,37 @@ class turtlebot():
 
             # Porportional Controller
             # linear velocity in the x-axis:
-            linearx = 0.8 * sqrt(pow((goal_pose.x - self.pose.x), 2) + pow((goal_pose.y - self.pose.y), 2))
+            linearx = 0.02 * sqrt((goal_pose.x - self.pose.x)**2 + (goal_pose.y - self.pose.y)**2)
             # linearx= 0.1* sqrt(pow((goal_pose.x - self.odom.pose.pose.position.x), 2) + pow((goal_pose.y - self.odom.pose.pose.position.y), 2))
 
             # angular velocity in the z-axis:
+            # goes from [-pi, pi], 
             angularz = 0
             if self.mode == simMode:
                 angularz = -0.8 * (atan2(goal_pose.y - self.pose.y, goal_pose.x - self.pose.x) - acos(self.pose.quatW)*2) # quaternion to angle
 
             if self.mode == realMode:
-                angularz = -0.8 * (atan2(goal_pose.y - self.pose.y, goal_pose.x - self.pose.x) - self.pose.theta)
+                angularz = -0.4 * (atan2(goal_pose.y - self.pose.y, goal_pose.x - self.pose.x) - self.pose.theta)
 
             angularz = self.constrain(angularz, -pi, pi)
 
+            print "current pose:"
             print "X: " , self.pose.x
             print "Y: " , self.pose.y
             print "theta: ", self.pose.theta
+            print "phone angle: ", self.phone
+
+            print "goal pose:"
+            print "X: ", goal_pose.x
+            print "Y: ", goal_pose.y
+            diffTheta = (atan2(goal_pose.y - self.pose.y, goal_pose.x - self.pose.x))
+            print "theta: ",diffTheta, np.rad2deg(diffTheta)
+
+            print "other:"
             print "angular, z: ", angularz
             print "waypoint:", way_number
-            print self.wPoints
+            print
+            #print self.wPoints
 
             # Publishing left and right velocities
             self.pubMotors(linearx, angularz)

@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
+<launch>
+  <!-- launch rosbridge-->
+  <include file="$(find rosbridge_server)/launch/rosbridge_websocket.launch" />
+
+   <!-- launch localizer-->
+  <node pkg="localizer" type="localizer_node" name="localizer_node" />
+
+  <!-- launch arduino node-->
+  <node pkg="rosserial_python" type="serial_node.py" name="arduino_node" output = "screen">
+    <param name="port" value="/dev/ttyACM0"/>
+    <param name="baud" value="57600"/>
+  </node>
+
+  <!-- launch local planner-->
+  <node name="local_planner" pkg="local_planner" type="local_planner.py" output = "screen">
+	<param name = "mode" value = "real"/>
+	<rosparam command="load" file="$(find local_planner)/config/waypoints.yaml" />
+	<param name="base_width" value="0.2" />
+	<param name="distance_tolerance" value="0.8"/>
+ </node>
+
+</launch>

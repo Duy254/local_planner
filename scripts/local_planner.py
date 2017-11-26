@@ -1,19 +1,23 @@
 #!/usr/bin/env python
 import rospy
 import numpy as np
-from geometry_msgs.msg import Twist
-from std_msgs.msg import Float32
-from geometry_msgs.msg import Pose2D
+from geometry_msgs.msg import *
+#from std_msgs.msg import Float32
+#from geometry_msgs.msg import Pose2D
 from math import *
 from arduino_msg.msg import Motor
 from nav_msgs.msg import Odometry
 from navcog_msg.msg import SimplifiedOdometry
 
-
-way_number = 1;
+way_number = 1
 realMode = "real"
 simMode = "simulation"
-maxSpeed = 0.2
+maxSpeed = 0.3
+
+#PID constants
+Kp = .2
+Ki = 0.0
+Kd = .4
 
 #pose can either be assigned info from twist or a pose2D msg
 class Pose:
@@ -33,39 +37,50 @@ class turtlebot():
         self.pose = Pose()
         self.pose2D = Pose2D()
         self.odom = Odometry()
-        self.phone = 0
+
+        # PID variables
+        self.lastError = 0
+        self.integral = 0
 
         self.rate = rospy.Rate(10)
         self.mode = rospy.get_param("~mode", "real")
 
         if self.mode == realMode:
             #self.pose_subscriber = rospy.Subscriber('pose', Pose2D, self.callback)
-           self.pose_subscriber = rospy.Subscriber('odometry', SimplifiedOdometry, self.callback)
+            self.poseSubscriber = rospy.Subscriber('odometry', SimplifiedOdometry, self.getPose)
+            self.PIDsubscriber = rospy.Subscriber('localPID', Vector3, self.tunePID)
 
         if self.mode == simMode:
              # subscribe to simulation instead need navmsg
-            self.pose_subscriber = rospy.Subscriber('odom', Odometry, self.callback)
+            self.poseSubscriber = rospy.Subscriber('odom', Odometry, self.getPose)
 
         self.w = rospy.get_param("~base_width", 0.2)
-        self.distance_tolerance = rospy.get_param("~distance_tolerance", 0.002)
+        self.distance_tolerance = rospy.get_param("~distance_tolerance", 0.2)
 
     # Callback function implementing the pose value received
-    def callback(self, data):
+    def getPose(self, data):
         #print "Callback"
         if (self.mode == realMode):
 
             #self.pose2D = data
             self.pose.x = round(data.pose.x, 6)
             self.pose.y = round(data.pose.y, 6)
-            self.pose.theta = np.deg2rad(90 - data.orientation)
+            self.pose.theta = np.deg2rad(data.orientation)
             self.pose.theta = self.constrain(self.pose.theta, -pi, pi)
-            self.phone = round(data.orientation, 6)
 
         if (self.mode == simMode):
             #self.odom = data
             self.pose.x = round(data.pose.pose.position.x, 6)
             self.pose.y = round(data.pose.pose.position.y, 6)
             self.pose.quatW = round(data.pose.pose.orientation.w, 6)
+
+    #Callback used for tuning PID params. Called when user publishes PID params to topic
+    def tunePID(self, params):
+        global Kp, Ki, Kd
+        Kp = params.x
+        Ki = params.y
+        Kd = params.z
+        print "\nParameters set to: Kp = ", Kp, " Ki = ", Ki, "Kd = ", Kd, "\n"
 
     def pubMotors(self, linearX, angularZ):
         goal_vel = Motor()
@@ -91,47 +106,55 @@ class turtlebot():
 
     def move2goal(self):
         global way_number
-        #print way_number
+
         point = self.wPoints[str(way_number)] #get current point from waypoints dict
         goal_pose = Pose2D()
         goal_pose.x = point["x"]
         goal_pose.y = point["y"]
 
-        while not rospy.is_shutdown() and sqrt(
-                        pow((goal_pose.x - self.pose.x), 2) + pow((goal_pose.y - self.pose.y), 2)) >= 0.05:
+        dist = sqrt((goal_pose.x - self.pose.x)**2 + (goal_pose.y - self.pose.y)** 2)
+        while not rospy.is_shutdown() and dist >= self.distance_tolerance:
 
             # Porportional Controller
             # linear velocity in the x-axis:
-            linearx = 0.02 * sqrt((goal_pose.x - self.pose.x)**2 + (goal_pose.y - self.pose.y)**2)
+            # linearx = 0.02 * sqrt((goal_pose.x - self.pose.x)**2 + (goal_pose.y - self.pose.y)**2)
             # linearx= 0.1* sqrt(pow((goal_pose.x - self.odom.pose.pose.position.x), 2) + pow((goal_pose.y - self.odom.pose.pose.position.y), 2))
 
             # angular velocity in the z-axis:
-            # goes from [-pi, pi], 
+            # goes from [-pi, pi],
+            linearx = maxSpeed
             angularz = 0
-            if self.mode == simMode:
-                angularz = -0.8 * (atan2(goal_pose.y - self.pose.y, goal_pose.x - self.pose.x) - acos(self.pose.quatW)*2) # quaternion to angle
 
+            #PD control
+            goalAngle = atan2(goal_pose.y - self.pose.y, goal_pose.x - self.pose.x)
             if self.mode == realMode:
-                angularz = -0.4 * (atan2(goal_pose.y - self.pose.y, goal_pose.x - self.pose.x) - self.pose.theta)
+                error = self.constrain(goalAngle - self.pose.theta, -pi, pi)
+                self.integral += error
+                derivative = error - self.lastError
+                self.lastError = error
+                angularz = Kp * error + Ki * self.integral + Kd * derivative
 
-            angularz = self.constrain(angularz, -pi, pi)
+            elif self.mode == simMode:
+                angularz = -0.8 * self.constrain(goalAngle - acos(self.pose.quatW)*2, -pi, pi) # quaternion to angle
 
-            print "current pose:"
-            print "X: " , self.pose.x
-            print "Y: " , self.pose.y
-            print "theta: ", self.pose.theta
-            print "phone angle: ", self.phone
+            # print "current pose:"
+            # print "X: " , self.pose.x
+            # print "Y: " , self.pose.y
+            # print "theta (rad): ", self.pose.theta
+            # print "IMU angle (deg): ", self.imuAngle
 
-            print "goal pose:"
-            print "X: ", goal_pose.x
-            print "Y: ", goal_pose.y
-            diffTheta = (atan2(goal_pose.y - self.pose.y, goal_pose.x - self.pose.x))
-            print "theta: ",diffTheta, np.rad2deg(diffTheta)
-
-            print "other:"
-            print "angular, z: ", angularz
-            print "waypoint:", way_number
-            print
+            print ("Current: {}, Desired: {}".format(np.rad2deg(self.pose.theta), np.rad2deg(goalAngle)))
+            print("angularz: {}".format(angularz))
+            # print "goal pose:"
+            # print "X: ", goal_pose.x
+            # print "Y: ", goal_pose.y
+            #goalAngle = (atan2(goal_pose.y - self.pose.y, goal_pose.x - self.pose.x))
+            # print "theta (rad): ",goalAngle, "deg: ", np.rad2deg(goalAngle)
+            #
+            # print "other:"
+            # print "angular, z (rad): ", angularz
+            # print "waypoint:", way_number
+            # print
             #print self.wPoints
 
             # Publishing left and right velocities
@@ -140,7 +163,6 @@ class turtlebot():
 
         # Stopping our robot after the movement is over and no more waypoints to go to
         way_number += 1
-
         if (way_number >= len(self.wPoints) + 1):
             print "stopped"
             self.pubMotors(0, 0)

@@ -14,6 +14,7 @@ find_package(catkin REQUIRED COMPONENTS
   tf
   arduino_msg
   nav_msgs
+  geometry_msgs
 )
 
 

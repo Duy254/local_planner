@@ -2,20 +2,18 @@
 import rospy
 import numpy as np
 from geometry_msgs.msg import *
-#from std_msgs.msg import Float32
-#from geometry_msgs.msg import Pose2D
 from math import *
 from arduino_msg.msg import Motor
 from nav_msgs.msg import Odometry
 from navcog_msg.msg import SimplifiedOdometry
 
 way_number = 1
-realMode = "real"
-simMode = "simulation"
-maxSpeed = 0.3
+realMode = "real" #operating on actual
+simMode = "simulation" #simulating in gazebo
+maxSpeed = 0.2
 
 #PID constants
-Kp = .2
+Kp = .5
 Ki = 0.0
 Kd = .4
 
@@ -25,6 +23,8 @@ class Pose:
     y = 0
     theta = 0       #pose specific (pose2D.theta)
     quatW = 0       #odometry specific (Odometry.pose.pose.quaternion.w)
+    vel = 0         #average of 2 wheel velocities from Navcog
+
 
 class turtlebot():
 
@@ -35,8 +35,8 @@ class turtlebot():
         self.pub_motor = rospy.Publisher('motorSpeed', Motor, queue_size=10)
         self.pub_twist = rospy.Publisher('cmd_vel', Twist, queue_size = 10)  # add a publisher for gazebo
         self.pose = Pose()
-        self.pose2D = Pose2D()
-        self.odom = Odometry()
+        #self.pose2D = Pose2D() #message
+        self.odom = SimplifiedOdometry()
 
         # PID variables
         self.lastError = 0
@@ -60,16 +60,15 @@ class turtlebot():
     # Callback function implementing the pose value received
     def getPose(self, data):
         #print "Callback"
-        if (self.mode == realMode):
-
+        if self.mode == realMode:
             #self.pose2D = data
+            self.pose.vel = data.speed
             self.pose.x = round(data.pose.x, 6)
             self.pose.y = round(data.pose.y, 6)
             self.pose.theta = np.deg2rad(data.orientation)
             self.pose.theta = self.constrain(self.pose.theta, -pi, pi)
 
-        if (self.mode == simMode):
-            #self.odom = data
+        if self.mode == simMode:
             self.pose.x = round(data.pose.pose.position.x, 6)
             self.pose.y = round(data.pose.pose.position.y, 6)
             self.pose.quatW = round(data.pose.pose.orientation.w, 6)
@@ -82,9 +81,10 @@ class turtlebot():
         Kd = params.z
         print "\nParameters set to: Kp = ", Kp, " Ki = ", Ki, "Kd = ", Kd, "\n"
 
+    #perform calculations to publish left and right velocities
     def pubMotors(self, linearX, angularZ):
-        goal_vel = Motor()
-        goal_twist = Twist()
+        goal_vel = Motor() #motor message
+        goal_twist = Twist() #twist message
 
         rightVel = linearX + angularZ * self.w / 2
         leftVel = linearX - angularZ * self.w / 2
@@ -92,11 +92,13 @@ class turtlebot():
         goal_vel.right_speed = rightVel
         self.pub_motor.publish(goal_vel)
 
-        if (self.mode == simMode): #publish twist for gazebo simulation
+        if self.mode == simMode: #publish twist for gazebo simulation
             goal_twist.linear.x = linearX
             goal_twist.angular.z = angularZ
             self.pub_twist.publish(goal_twist)
 
+    # constrain angl between lowBound and hiBound.
+    # This function assumes everything is in radians
     def constrain(self, angl, lowBound, hiBound):
         while angl < lowBound:
             angl += 2*pi
@@ -111,9 +113,9 @@ class turtlebot():
         goal_pose = Pose2D()
         goal_pose.x = point["x"]
         goal_pose.y = point["y"]
+        dist = sqrt((goal_pose.x - self.pose.x) ** 2 + (goal_pose.y - self.pose.y) ** 2)
 
-        dist = sqrt((goal_pose.x - self.pose.x)**2 + (goal_pose.y - self.pose.y)** 2)
-        while not rospy.is_shutdown() and dist >= self.distance_tolerance:
+        while not rospy.is_shutdown() and dist >= 1:
 
             # Porportional Controller
             # linear velocity in the x-axis:
@@ -129,7 +131,10 @@ class turtlebot():
             goalAngle = atan2(goal_pose.y - self.pose.y, goal_pose.x - self.pose.x)
             if self.mode == realMode:
                 error = self.constrain(goalAngle - self.pose.theta, -pi, pi)
-                self.integral += error
+
+                if abs(self.pose.vel) <= 0.01 :
+                    self.integral += error
+
                 derivative = error - self.lastError
                 self.lastError = error
                 angularz = Kp * error + Ki * self.integral + Kd * derivative
@@ -145,6 +150,8 @@ class turtlebot():
 
             print ("Current: {}, Desired: {}".format(np.rad2deg(self.pose.theta), np.rad2deg(goalAngle)))
             print("angularz: {}".format(angularz))
+            print "waypoint:", way_number,
+            print "dist tol: ", self.distance_tolerance, "dist to waypoint: ", dist
             # print "goal pose:"
             # print "X: ", goal_pose.x
             # print "Y: ", goal_pose.y
@@ -153,17 +160,17 @@ class turtlebot():
             #
             # print "other:"
             # print "angular, z (rad): ", angularz
-            # print "waypoint:", way_number
             # print
             #print self.wPoints
 
             # Publishing left and right velocities
+            dist = sqrt((goal_pose.x - self.pose.x) ** 2 + (goal_pose.y - self.pose.y) ** 2)
             self.pubMotors(linearx, angularz)
             self.rate.sleep()
 
         # Stopping our robot after the movement is over and no more waypoints to go to
         way_number += 1
-        if (way_number >= len(self.wPoints) + 1):
+        if way_number >= len(self.wPoints) + 1:
             print "stopped"
             self.pubMotors(0, 0)
         else:

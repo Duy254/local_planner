@@ -113,6 +113,7 @@ class turtlebot():
         goal_pose = Pose2D()
         goal_pose.x = point["x"]
         goal_pose.y = point["y"]
+	next_turn_angle=point["theta"]
         dist = sqrt((goal_pose.x - self.pose.x) ** 2 + (goal_pose.y - self.pose.y) ** 2)
 
         while not rospy.is_shutdown() and dist >= self.distance_tolerance:
@@ -166,6 +167,14 @@ class turtlebot():
             # Publishing left and right velocities
             dist = sqrt((goal_pose.x - self.pose.x) ** 2 + (goal_pose.y - self.pose.y) ** 2)
             self.pubMotors(linearx, angularz)
+
+
+	    #Giving feedback to the user for right and left turns 
+	    if dist<=1 and next_turn_angle==1.57079632679
+	   
+
+
+
             self.rate.sleep()
 
         # Stopping our robot after the movement is over and no more waypoints to go to

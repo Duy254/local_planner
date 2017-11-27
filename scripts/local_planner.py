@@ -115,7 +115,7 @@ class turtlebot():
         goal_pose.y = point["y"]
         dist = sqrt((goal_pose.x - self.pose.x) ** 2 + (goal_pose.y - self.pose.y) ** 2)
 
-        while not rospy.is_shutdown() and dist >= 1:
+        while not rospy.is_shutdown() and dist >= self.distance_tolerance:
 
             # Porportional Controller
             # linear velocity in the x-axis:

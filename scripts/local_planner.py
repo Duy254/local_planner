@@ -10,7 +10,7 @@ from navcog_msg.msg import SimplifiedOdometry
 way_number = 1
 realMode = "real" #operating on actual
 simMode = "simulation" #simulating in gazebo
-maxSpeed = 0.2
+maxSpeed = 0.3
 
 #PID constants
 Kp = .5
@@ -27,6 +27,8 @@ class Pose:
 
 
 class turtlebot():
+
+    begin = false
 
     def __init__(self):
         # Creating our node,publisher and subscriber
@@ -59,6 +61,7 @@ class turtlebot():
 
     # Callback function implementing the pose value received
     def getPose(self, data):
+        self.begin = true;
         #print "Callback"
         if self.mode == realMode:
             #self.pose2D = data
@@ -114,6 +117,9 @@ class turtlebot():
         goal_pose.x = point["x"]
         goal_pose.y = point["y"]
         dist = sqrt((goal_pose.x - self.pose.x) ** 2 + (goal_pose.y - self.pose.y) ** 2)
+
+        while not self.begin:
+            pass
 
         while not rospy.is_shutdown() and dist >= self.distance_tolerance:
 

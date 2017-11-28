@@ -17,7 +17,7 @@ maxSpeed = 0.2
 #warn user if angle (in radians) is larger than TURN_THRESHOLD
 TURN_THRESHOLD = pi/4
 #number of meters before CaBot verbally warns user
-WARN_THESHOLD = 1
+WARN_THESHOLD = 3
 
 #PID constants
 Kp = .5

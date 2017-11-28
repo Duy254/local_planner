@@ -2,20 +2,39 @@
 import numpy as np
 import sys
 import csv
+from math import *
+
+isDeg = False
 
 def unit_vector(vector):
     """ Returns the unit vector of the vector.  """
     return vector / np.linalg.norm(vector)
 
 def angle_between(v1, v2):
-    v1_u = unit_vector(v1)
-    v2_u = unit_vector(v2)
+    # v1_u = unit_vector(v1)
+    # v2_u = unit_vector(v2)
 
      #return degrees if user entered "d" as 2nd argument
     if len(sys.argv) > 3 and sys.argv[3] == 'd':
-        return np.rad2deg(np.arccos(np.clip(np.dot(v1_u, v2_u), -1.0, 1.0)))
+        global isDeg
+        isDeg = True
+        #angleBetw = np.rad2deg(np.arccos(np.clip(np.dot(v1_u, v2_u), -1.0, 1.0)))
+        angleBetw = np.rad2deg(atan2(v2[1],v2[0]) - atan2(v1[1],v1[0]))
+        # if np.dot(v1, v2) < 0:
+        #     angleBetw *= -1
+
+
     else: #return radians
-        return np.arccos(np.clip(np.dot(v1_u, v2_u), -1.0, 1.0))
+        #return np.arccos(np.clip(np.dot(v1_u, v2_u), -1.0, 1.0))
+        angleBetw = atan2(v2[1],v2[0]) - atan2(v1[1],v1[0])
+    return angleBetw
+
+def constrain(angle, lowBound, hiBound):
+    while angle < lowBound:
+        angle += 2 * pi
+    while angle > hiBound:
+        angle -= 2 * pi
+    return angle
 
 tupleList = []
 coordCsv = [] #list of coordinates read in from file
@@ -30,15 +49,21 @@ if (len(sys.argv) > 1):
     for a in range (0, len(coordCsv)):
         coordCsv[a] = map(float, coordCsv[a])
 
-    for i in range (0, len(coordCsv)):
-         #omit 1st and last point
-        if i in range(1, len(coordCsv) - 1):
+    for i in range (1, len(coordCsv)):
+         #omit 1st and last point from angle calculations
+        if i in range(0, len(coordCsv) - 1):
             currVect = (coordCsv[i][0] - coordCsv[i-1][0], coordCsv[i][1] - coordCsv[i-1][1])
             nextVect = (coordCsv[i+1][0] - coordCsv[i][0], coordCsv[i+1][1] - coordCsv[i][1])
             angle = angle_between(currVect, nextVect)
 
+
         else:
             angle = 0
+
+        if isDeg:
+            angle = constrain(angle, -180, 180)
+        else:
+            angle = constrain(angle, -pi, pi)
 
         tupleList.append((coordCsv[i][0], coordCsv[i][1], angle))
 

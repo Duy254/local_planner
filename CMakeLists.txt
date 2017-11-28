@@ -15,6 +15,8 @@ find_package(catkin REQUIRED COMPONENTS
   arduino_msg
   nav_msgs
   geometry_msgs
+  sensor_msgs
+  laser_geometry
 )
 
 

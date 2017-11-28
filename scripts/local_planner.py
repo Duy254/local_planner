@@ -6,6 +6,9 @@ from math import *
 from arduino_msg.msg import Motor
 from nav_msgs.msg import Odometry
 from navcog_msg.msg import SimplifiedOdometry
+from sensor_msgs.msg import LaserScan
+import sensor_msgs.point_cloud2 as pc2
+from laser_geomtry import LaserProjection
 
 way_number = 1
 realMode = "real" #operating on actual
@@ -51,6 +54,7 @@ class turtlebot():
             #self.pose_subscriber = rospy.Subscriber('pose', Pose2D, self.callback)
             self.poseSubscriber = rospy.Subscriber('odometry', SimplifiedOdometry, self.getPose)
             self.PIDsubscriber = rospy.Subscriber('localPID', Vector3, self.tunePID)
+            self.lidarSub = rospy.Subscriber('scan', LaserScan, self.get_lidar)
 
         if self.mode == simMode:
              # subscribe to simulation instead need navmsg
@@ -58,6 +62,17 @@ class turtlebot():
 
         self.w = rospy.get_param("~base_width", 0.2)
         self.distance_tolerance = rospy.get_param("~distance_tolerance", 0.2)
+
+    # Callback function implementing the lidar range values received
+    def get_lidar(self, scan):
+        print scan
+        rospy.loginfo("Got scan, projecting")
+        cloud = self.laser_projector.projectLaser(scan)
+        gen = pc2.read_points(cloud, skip_nans=True, field_names=("x", "y", "z"))
+        self.xyz_generator = gen
+        print cloud
+        rospy.loginto("Printed cloud")
+
 
     # Callback function implementing the pose value received
     def getPose(self, data):

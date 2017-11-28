@@ -2,6 +2,7 @@
 import rospy
 import numpy as np
 from geometry_msgs.msg import *
+from std_msgs.msg import String
 from math import *
 from arduino_msg.msg import Motor
 from nav_msgs.msg import Odometry
@@ -11,6 +12,12 @@ way_number = 1
 realMode = "real" #operating on actual
 simMode = "simulation" #simulating in gazebo
 maxSpeed = 0.2
+
+#HCI variables
+#warn user if angle (in radians) is larger than TURN_THRESHOLD
+TURN_THRESHOLD = pi/4
+#number of meters before CaBot verbally warns user
+WARN_THESHOLD = 1
 
 #PID constants
 Kp = .5
@@ -28,12 +35,15 @@ class Pose:
 
 class turtlebot():
 
+    beenWarned = False #true if warning has already been issued
+
     def __init__(self):
         # Creating our node,publisher and subscriber
         rospy.init_node('local_planner', anonymous=True)
         self.wPoints = rospy.get_param("/waypoints")
         self.pub_motor = rospy.Publisher('motorSpeed', Motor, queue_size=10)
         self.pub_twist = rospy.Publisher('cmd_vel', Twist, queue_size = 10)  # add a publisher for gazebo
+        self.pub_HCI = rospy.Publisher('speak', String, queue_size = 10)  # add a publisher for HCI speaking
         self.pose = Pose()
         #self.pose2D = Pose2D() #message
         self.odom = SimplifiedOdometry()
@@ -97,23 +107,23 @@ class turtlebot():
             goal_twist.angular.z = angularZ
             self.pub_twist.publish(goal_twist)
 
-    # constrain angl between lowBound and hiBound.
+    # constrain angle between lowBound and hiBound.
     # This function assumes everything is in radians
-    def constrain(self, angl, lowBound, hiBound):
-        while angl < lowBound:
-            angl += 2*pi
-        while angl > hiBound:
-            angl -= 2*pi
-        return angl
+    def constrain(self, angle, lowBound, hiBound):
+        while angle < lowBound:
+            angle += 2 * pi
+        while angle > hiBound:
+            angle -= 2 * pi
+        return angle
 
     def move2goal(self):
-        global way_number
 
+        global way_number
         point = self.wPoints[str(way_number)] #get current point from waypoints dict
         goal_pose = Pose2D()
         goal_pose.x = point["x"]
         goal_pose.y = point["y"]
-	next_turn_angle=point["theta"]
+        next_turn_angle = point["theta"]
         dist = sqrt((goal_pose.x - self.pose.x) ** 2 + (goal_pose.y - self.pose.y) ** 2)
 
         while not rospy.is_shutdown() and dist >= self.distance_tolerance:
@@ -143,37 +153,27 @@ class turtlebot():
             elif self.mode == simMode:
                 angularz = -0.8 * self.constrain(goalAngle - acos(self.pose.quatW)*2, -pi, pi) # quaternion to angle
 
-            # print "current pose:"
-            # print "X: " , self.pose.x
-            # print "Y: " , self.pose.y
-            # print "theta (rad): ", self.pose.theta
-            # print "IMU angle (deg): ", self.imuAngle
-
             print ("Current: {}, Desired: {}".format(np.rad2deg(self.pose.theta), np.rad2deg(goalAngle)))
             print("angularz: {}".format(angularz))
-            print "waypoint:", way_number,
-            print "dist tol: ", self.distance_tolerance, "dist to waypoint: ", dist
-            # print "goal pose:"
-            # print "X: ", goal_pose.x
-            # print "Y: ", goal_pose.y
-            #goalAngle = (atan2(goal_pose.y - self.pose.y, goal_pose.x - self.pose.x))
-            # print "theta (rad): ",goalAngle, "deg: ", np.rad2deg(goalAngle)
-            #
-            # print "other:"
-            # print "angular, z (rad): ", angularz
-            # print
-            #print self.wPoints
+            print "waypoint: #", way_number , " dist to waypoint: ", dist
 
             # Publishing left and right velocities
             dist = sqrt((goal_pose.x - self.pose.x) ** 2 + (goal_pose.y - self.pose.y) ** 2)
             self.pubMotors(linearx, angularz)
 
+            #Giving feedback to the user for right and left turns
+            if dist <= WARN_THESHOLD and not self.beenWarned and self.next_turn_angle >= abs(TURN_THRESHOLD):
 
-	    #Giving feedback to the user for right and left turns 
-	    if dist<=1 and next_turn_angle==1.57079632679
-	   
+                if self.next_turn_angle < 0:
+                    direction = "right"
+                else:
+                    direction = "left"
 
+                turnMsg = "Turn " + direction + " in " + str(TURN_THRESHOLD) + " meters."
 
+                print "\n" + turnMsg + "\n"
+                self.pub_HCI.publish(turnMsg)
+                self.beenWarned = True
 
             self.rate.sleep()
 
@@ -184,6 +184,7 @@ class turtlebot():
             self.pubMotors(0, 0)
         else:
             #TODO: make this iterative
+            self.beenWarned = False
             turtlebot().move2goal()
 
         rospy.spin()

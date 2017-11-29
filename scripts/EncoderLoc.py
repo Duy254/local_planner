@@ -16,20 +16,26 @@ width = .2 #width of CaBot in meters
 totTheta = 0
 dt = 0.1
 odom = SimplifiedOdometry() #published odometry 
-begin = False
+global begin 
+begin= True
 
 def getVelocities(motor):
 
     global odom
+    global old_time
     global curr_time 
+    global begin
     curr_time=motor.header.stamp.secs
-    dt=curr_time-old_time
+    
     if begin is True:
 	dt=0
+        print "first dt"
+    else:
+        dt=curr_time-old_time
 
     dtheta = ((float(1)/width) * (motor.left_speed - motor.right_speed )) * dt
-    odom.x += (0.5 * (motor.left_speed + motor.right_speed) * math.cos(pose.theta)) * dt
-    odom.y += (0.5 * (motor.left_speed + motor.right_speed) * math.sin(pose.theta)) * dt
+    odom.pose.x += (0.5 * (motor.left_speed + motor.right_speed) * math.cos(odom.orientation)) * dt
+    odom.pose.y += (0.5 * (motor.left_speed + motor.right_speed) * math.sin(odom.orientation)) * dt
     #pose.theta += dtheta
     #pose.theta = constrain(pose.theta)
     pub.publish(odom)
@@ -39,7 +45,7 @@ def getVelocities(motor):
     old_time=curr_time
 
 def getPose(data):
-    odom.theta = np.deg2rad(data.orientation)
+    odom.orientation = np.deg2rad(data.orientation)
 
 def constrain(rad):
     while (rad < -math.pi):

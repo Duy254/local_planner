@@ -13,7 +13,7 @@ simMode = "simulation" #simulating in gazebo
 maxSpeed = 0.3
 
 #PID constants
-Kp = .5
+Kp = 0.35
 Ki = 0.0
 Kd = .4
 

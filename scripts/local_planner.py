@@ -6,6 +6,7 @@ from math import *
 from arduino_msg.msg import Motor
 from nav_msgs.msg import Odometry
 from navcog_msg.msg import SimplifiedOdometry
+from hci_node.msg import waypoint
 
 way_number = 1
 realMode = "real" #operating on actual
@@ -28,7 +29,7 @@ class Pose:
 
 class turtlebot():
 
-    begin = false
+    begin = False
 
     def __init__(self):
         # Creating our node,publisher and subscriber
@@ -36,6 +37,7 @@ class turtlebot():
         self.wPoints = rospy.get_param("/waypoints")
         self.pub_motor = rospy.Publisher('motorSpeed', Motor, queue_size=10)
         self.pub_twist = rospy.Publisher('cmd_vel', Twist, queue_size = 10)  # add a publisher for gazebo
+        self.pub_wayPts = rospy.Publisher('waypt', waypoint, queue_size = 10)
         self.pose = Pose()
         #self.pose2D = Pose2D() #message
         self.odom = SimplifiedOdometry()
@@ -61,7 +63,7 @@ class turtlebot():
 
     # Callback function implementing the pose value received
     def getPose(self, data):
-        self.begin = true;
+        self.begin = True;
         #print "Callback"
         if self.mode == realMode:
             #self.pose2D = data
@@ -148,26 +150,16 @@ class turtlebot():
             elif self.mode == simMode:
                 angularz = -0.8 * self.constrain(goalAngle - acos(self.pose.quatW)*2, -pi, pi) # quaternion to angle
 
-            # print "current pose:"
-            # print "X: " , self.pose.x
-            # print "Y: " , self.pose.y
-            # print "theta (rad): ", self.pose.theta
-            # print "IMU angle (deg): ", self.imuAngle
-
             print ("Current: {}, Desired: {}".format(np.rad2deg(self.pose.theta), np.rad2deg(goalAngle)))
             print("angularz: {}".format(angularz))
             print "waypoint:", way_number,
             print "dist tol: ", self.distance_tolerance, "dist to waypoint: ", dist
-            # print "goal pose:"
-            # print "X: ", goal_pose.x
-            # print "Y: ", goal_pose.y
-            #goalAngle = (atan2(goal_pose.y - self.pose.y, goal_pose.x - self.pose.x))
-            # print "theta (rad): ",goalAngle, "deg: ", np.rad2deg(goalAngle)
-            #
-            # print "other:"
-            # print "angular, z (rad): ", angularz
-            # print
-            #print self.wPoints
+
+            #Publish info to waypt topic for HCI node
+            wayMsg = waypoint()
+            wayMsg.pointNum = way_number
+            wayMsg.dist = dist
+            self.pub_wayPts(wayMsg)
 
             # Publishing left and right velocities
             dist = sqrt((goal_pose.x - self.pose.x) ** 2 + (goal_pose.y - self.pose.y) ** 2)

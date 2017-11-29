@@ -16,9 +16,17 @@ width = .2 #width of CaBot in meters
 totTheta = 0
 dt = 0.1
 odom = SimplifiedOdometry() #published odometry 
+begin = False
 
 def getVelocities(motor):
+
     global odom
+    global curr_time 
+    curr_time=motor.header.stamp.secs
+    dt=curr_time-old_time
+    if begin is True:
+	dt=0
+
     dtheta = ((float(1)/width) * (motor.left_speed - motor.right_speed )) * dt
     odom.x += (0.5 * (motor.left_speed + motor.right_speed) * math.cos(pose.theta)) * dt
     odom.y += (0.5 * (motor.left_speed + motor.right_speed) * math.sin(pose.theta)) * dt
@@ -28,6 +36,7 @@ def getVelocities(motor):
     
     # totX += pose.x
     # totY += pose.y
+    old_time=curr_time
 
 def getPose(data):
     odom.theta = np.deg2rad(data.orientation)

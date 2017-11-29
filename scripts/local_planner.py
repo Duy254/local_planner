@@ -14,7 +14,7 @@ simMode = "simulation" #simulating in gazebo
 maxSpeed = 0.3
 
 #PID constants
-Kp = 0.35
+Kp = 0.4
 Ki = 0.0
 Kd = .4
 
@@ -168,7 +168,8 @@ class turtlebot():
             #Publish info to waypt topic for HCI node
             wayMsg = waypoint()
             wayMsg.pointNum = way_number
-            wayMsg.dist = dist
+            wayMsg.dist = sqrt((goal_pose.x - self.pose.x) ** 2 + (goal_pose.y - self.pose.y) ** 2)
+
             self.pub_wayPts.publish(wayMsg)
 
             print ("Current: {}, Desired: {}".format(np.rad2deg(self.pose.theta), np.rad2deg(goalAngle)))

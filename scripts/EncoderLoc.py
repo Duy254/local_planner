@@ -33,12 +33,17 @@ def getVelocities(motor):
         print "first dt"
         begin = False 
         odom.orientation=180
+        odom.pose.x=-9
+        odom.pose.y=0
+   
     else:
         dt=curr_time-old_time
+        theta=np.deg2rad(odom.orientation)
+	odom.pose.x += (0.5 * (motor.left_speed + motor.right_speed) * math.cos(theta)) * dt
+        odom.pose.y += (0.5 * (motor.left_speed + motor.right_speed) * math.sin(theta)) * dt
 
-    theta=np.deg2rad(odom.orientation)
-    odom.pose.x += (0.5 * (motor.left_speed + motor.right_speed) * math.cos(theta)) * dt
-    odom.pose.y += (0.5 * (motor.left_speed + motor.right_speed) * math.sin(theta)) * dt
+    
+    
     print("pose.x".format(odom.pose.x))
     print("motor left speed".format(motor.left_speed))
     #pose.theta += dtheta

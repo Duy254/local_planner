@@ -28,7 +28,7 @@ class Pose:
 
 class turtlebot():
 
-    begin = false
+    begin = False
 
     def __init__(self):
         # Creating our node,publisher and subscriber
@@ -49,7 +49,8 @@ class turtlebot():
 
         if self.mode == realMode:
             #self.pose_subscriber = rospy.Subscriber('pose', Pose2D, self.callback)
-            self.poseSubscriber = rospy.Subscriber('odometry', SimplifiedOdometry, self.getPose)
+            #self.poseSubscriber = rospy.Subscriber('odometry', SimplifiedOdometry, self.getPose)
+            self.poseSubscriber = rospy.Subscriber('poseEncoder', SimplifiedOdometry, self.getPose)
             self.PIDsubscriber = rospy.Subscriber('localPID', Vector3, self.tunePID)
 
         if self.mode == simMode:
@@ -61,7 +62,7 @@ class turtlebot():
 
     # Callback function implementing the pose value received
     def getPose(self, data):
-        self.begin = true;
+        self.begin = True;
         #print "Callback"
         if self.mode == realMode:
             #self.pose2D = data

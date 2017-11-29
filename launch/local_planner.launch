@@ -8,4 +8,9 @@
 	<param name="distance_tolerance" value="0.02"/>
 
  </node>
+
+<!--launch only encoder localization-->
+
+ <node name="EncoderLoc" pkg="local_planner" type="EncoderLoc.py" output = "screen"></node>>
+
 </launch>

@@ -150,16 +150,16 @@ class turtlebot():
             elif self.mode == simMode:
                 angularz = -0.8 * self.constrain(goalAngle - acos(self.pose.quatW)*2, -pi, pi) # quaternion to angle
 
-            print ("Current: {}, Desired: {}".format(np.rad2deg(self.pose.theta), np.rad2deg(goalAngle)))
-            print("angularz: {}".format(angularz))
-            print "waypoint:", way_number,
-            print "dist tol: ", self.distance_tolerance, "dist to waypoint: ", dist
+            #print ("Current: {}, Desired: {}".format(np.rad2deg(self.pose.theta), np.rad2deg(goalAngle)))
+            #print("angularz: {}".format(angularz))
+            #print "waypoint:", way_number,
+            #print "dist tol: ", self.distance_tolerance, "dist to waypoint: ", dist
 
             #Publish info to waypt topic for HCI node
             wayMsg = waypoint()
             wayMsg.pointNum = way_number
             wayMsg.dist = dist
-            self.pub_wayPts(wayMsg)
+            self.pub_wayPts.publish(wayMsg)
 
             # Publishing left and right velocities
             dist = sqrt((goal_pose.x - self.pose.x) ** 2 + (goal_pose.y - self.pose.y) ** 2)

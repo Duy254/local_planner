@@ -42,8 +42,6 @@ def getVelocities(motor):
 	odom.pose.x += (0.5 * (motor.left_speed + motor.right_speed) * math.cos(theta)) * dt
         odom.pose.y += (0.5 * (motor.left_speed + motor.right_speed) * math.sin(theta)) * dt
 
-    
-    
     print("pose.x".format(odom.pose.x))
     print("motor left speed".format(motor.left_speed))
     #pose.theta += dtheta

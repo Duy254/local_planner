@@ -33,5 +33,4 @@
 
  <node name="EncoderLoc" pkg="local_planner" type="EncoderLoc.py" output = "screen"></node>>
 
-
 </launch>

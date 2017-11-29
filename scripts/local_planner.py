@@ -28,7 +28,7 @@ class Pose:
 
 class turtlebot():
 
-    begin = false
+    begin = False
 
     def __init__(self):
         # Creating our node,publisher and subscriber
@@ -61,7 +61,7 @@ class turtlebot():
 
     # Callback function implementing the pose value received
     def getPose(self, data):
-        self.begin = true;
+        self.begin = True;
         #print "Callback"
         if self.mode == realMode:
             #self.pose2D = data
@@ -116,7 +116,21 @@ class turtlebot():
         goal_pose = Pose2D()
         goal_pose.x = point["x"]
         goal_pose.y = point["y"]
-        dist = sqrt((goal_pose.x - self.pose.x) ** 2 + (goal_pose.y - self.pose.y) ** 2)
+
+
+        # added by Chris
+        if way_number == 1:
+            dist = abs(goal_pose.x - self.pose.x);
+        elif way_number == 2:
+            dist = abs(goal_pose.y - self.pose.y);
+        elif way_number == 3:
+            dist = abs(goal_pose.x - self.pose.x);
+        elif way_number == 4:
+            dist = abs(goal_pose.y - self.pose.y);
+        # end added by Chris
+        
+
+        # dist = sqrt((goal_pose.x - self.pose.x) ** 2 + (goal_pose.y - self.pose.y) ** 2)
 
         while not self.begin:
             pass
@@ -169,8 +183,19 @@ class turtlebot():
             # print
             #print self.wPoints
 
+            # added by Chris
+            if way_number == 1:
+                dist = abs(goal_pose.x - self.pose.x);
+            elif way_number == 2:
+                dist = abs(goal_pose.y - self.pose.y);
+            elif way_number == 3:
+                dist = abs(goal_pose.x - self.pose.x);
+            elif way_number == 4:
+                dist = abs(goal_pose.y - self.pose.y);
+            # end added by Chris
+
             # Publishing left and right velocities
-            dist = sqrt((goal_pose.x - self.pose.x) ** 2 + (goal_pose.y - self.pose.y) ** 2)
+            # dist = sqrt((goal_pose.x - self.pose.x) ** 2 + (goal_pose.y - self.pose.y) ** 2)
             self.pubMotors(linearx, angularz)
             self.rate.sleep()
 

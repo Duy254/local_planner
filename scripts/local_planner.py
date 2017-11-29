@@ -51,7 +51,8 @@ class turtlebot():
 
         if self.mode == realMode:
             #self.pose_subscriber = rospy.Subscriber('pose', Pose2D, self.callback)
-            self.poseSubscriber = rospy.Subscriber('odometry', SimplifiedOdometry, self.getPose)
+            #self.poseSubscriber = rospy.Subscriber('odometry', SimplifiedOdometry, self.getPose)
+            self.poseSubscriber = rospy.Subscriber('poseEncoder', SimplifiedOdometry, self.getPose)
             self.PIDsubscriber = rospy.Subscriber('localPID', Vector3, self.tunePID)
 
         if self.mode == simMode:

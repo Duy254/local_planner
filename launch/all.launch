@@ -27,4 +27,9 @@
   	  <rosparam command="load" file="$(find local_planner)/config/waypoints.yaml" />
   </node>
 
+<!--launch only encoder localization-->
+
+ <node name="EncoderLoc" pkg="local_planner" type="EncoderLoc.py" output = "screen"></node>>
+
+
 </launch>

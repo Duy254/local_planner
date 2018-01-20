@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 import rospy
 import numpy as np
+import tf
 from geometry_msgs.msg import *
 from math import *
 from arduino_msg.msg import Motor
@@ -53,7 +54,7 @@ class turtlebot():
         if self.mode == realMode:
             #self.pose_subscriber = rospy.Subscriber('pose', Pose2D, self.callback)
             #self.poseSubscriber = rospy.Subscriber('odometry', SimplifiedOdometry, self.getPose)
-            self.poseSubscriber = rospy.Subscriber('odom', Odometry, self.getPose)
+            self.poseSubscriber = rospy.Subscriber('amcl_pose', PoseWithCovarianceStamped, self.getPose)
             self.PIDsubscriber = rospy.Subscriber('localPID', Vector3, self.tunePID)
 
         if self.mode == simMode:
@@ -69,11 +70,11 @@ class turtlebot():
         #print "Callback"
         if self.mode == realMode:
             #self.pose2D = data
-            self.pose.vel = data.speed
-            self.pose.x = round(data.pose.x, 6)
-            self.pose.y = round(data.pose.y, 6)
-            self.pose.theta = np.deg2rad(data.orientation)
-            self.pose.theta = self.constrain(self.pose.theta, -pi, pi)
+            q = (data.pose.pose.orientation.x, data.pose.pose.orientation.y, data.pose.pose.orientation.z, data.pose.pose.orientation.w)
+            euler = tf.transformations.euler_from_quaternion(q)
+            self.pose.x = round(data.pose.pose.position.x, 6)
+            self.pose.y = round(data.pose.pose.position.y, 6)
+            self.pose.theta = euler[2]
 
         if self.mode == simMode:
             self.pose.x = round(data.pose.pose.position.x, 6)
@@ -139,8 +140,8 @@ class turtlebot():
             if self.mode == realMode:
                 error = self.constrain(goalAngle - self.pose.theta, -pi, pi)
 
-                if abs(self.pose.vel) <= 0.01 :
-                    self.integral += error
+                # if abs(self.pose.vel) <= 0.01 :
+                self.integral += error
 
                 derivative = error - self.lastError
                 self.lastError = error

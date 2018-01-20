@@ -53,7 +53,7 @@ class turtlebot():
         if self.mode == realMode:
             #self.pose_subscriber = rospy.Subscriber('pose', Pose2D, self.callback)
             #self.poseSubscriber = rospy.Subscriber('odometry', SimplifiedOdometry, self.getPose)
-            self.poseSubscriber = rospy.Subscriber('poseEncoder', SimplifiedOdometry, self.getPose)
+            self.poseSubscriber = rospy.Subscriber('odom', Odometry, self.getPose)
             self.PIDsubscriber = rospy.Subscriber('localPID', Vector3, self.tunePID)
 
         if self.mode == simMode:
@@ -120,19 +120,7 @@ class turtlebot():
         goal_pose = Pose2D()
         goal_pose.x = point["x"]
         goal_pose.y = point["y"]
-
-
-        # added by Chris
-        # if way_number == 1:
-        #     dist = abs(goal_pose.y - self.pose.y);
-        # elif way_number == 2:
-        #     dist = abs(goal_pose.x - self.pose.x);
-        # elif way_number == 3:
-        #     dist = abs(goal_pose.y - self.pose.y);
-        # elif way_number == 4:
-        #     dist = abs(goal_pose.x - self.pose.x);
-        # end added by Chris
-        
+      
 
         dist = sqrt((goal_pose.x - self.pose.x) ** 2 + (goal_pose.y - self.pose.y) ** 2)
 
@@ -140,11 +128,6 @@ class turtlebot():
             pass
 
         while not rospy.is_shutdown() and dist >= self.distance_tolerance:
-
-            # Porportional Controller
-            # linear velocity in the x-axis:
-            # linearx = 0.02 * sqrt((goal_pose.x - self.pose.x)**2 + (goal_pose.y - self.pose.y)**2)
-            # linearx= 0.1* sqrt(pow((goal_pose.x - self.odom.pose.pose.position.x), 2) + pow((goal_pose.y - self.odom.pose.pose.position.y), 2))
 
             # angular velocity in the z-axis:
             # goes from [-pi, pi],
@@ -178,16 +161,6 @@ class turtlebot():
             print "waypoint:", way_number, "\t dist to waypoint: ", dist #"point: ", goal_pose.x, goal_pose.y
             #print
 
-            # # added by Chris
-            # if way_number == 1:
-            #     dist = abs(goal_pose.y - self.pose.y);
-            # elif way_number == 2:
-            #     dist = abs(goal_pose.x - self.pose.x);
-            # elif way_number == 3:
-            #     dist = abs(goal_pose.y - self.pose.y);
-            # elif way_number == 4:
-            #     dist = abs(goal_pose.x - self.pose.x);
-            # # end added by Chris
 
             # Publishing left and right velocities
             dist = sqrt((goal_pose.x - self.pose.x) ** 2 + (goal_pose.y - self.pose.y) ** 2)

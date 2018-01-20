@@ -123,18 +123,18 @@ class turtlebot():
 
 
         # added by Chris
-        if way_number == 1:
-            dist = abs(goal_pose.x - self.pose.x);
-        elif way_number == 2:
-            dist = abs(goal_pose.y - self.pose.y);
-        elif way_number == 3:
-            dist = abs(goal_pose.x - self.pose.x);
-        elif way_number == 4:
-            dist = abs(goal_pose.y - self.pose.y);
+        # if way_number == 1:
+        #     dist = abs(goal_pose.y - self.pose.y);
+        # elif way_number == 2:
+        #     dist = abs(goal_pose.x - self.pose.x);
+        # elif way_number == 3:
+        #     dist = abs(goal_pose.y - self.pose.y);
+        # elif way_number == 4:
+        #     dist = abs(goal_pose.x - self.pose.x);
         # end added by Chris
         
 
-        # dist = sqrt((goal_pose.x - self.pose.x) ** 2 + (goal_pose.y - self.pose.y) ** 2)
+        dist = sqrt((goal_pose.x - self.pose.x) ** 2 + (goal_pose.y - self.pose.y) ** 2)
 
         while not self.begin:
             pass
@@ -174,23 +174,23 @@ class turtlebot():
             self.pub_wayPts.publish(wayMsg)
 
             print ("Current: {}, Desired: {}".format(np.rad2deg(self.pose.theta), np.rad2deg(goalAngle)))
-            print("angularz: {}".format(angularz))
-            print "waypoint:", way_number,
-            print "dist tol: ", self.distance_tolerance, "dist to waypoint: ", dist
+            # print("angularz: {}".format(angularz))
+            print "waypoint:", way_number, "\t dist to waypoint: ", dist #"point: ", goal_pose.x, goal_pose.y
+            #print
 
-            # added by Chris
-            if way_number == 1:
-                dist = abs(goal_pose.x - self.pose.x);
-            elif way_number == 2:
-                dist = abs(goal_pose.y - self.pose.y);
-            elif way_number == 3:
-                dist = abs(goal_pose.x - self.pose.x);
-            elif way_number == 4:
-                dist = abs(goal_pose.y - self.pose.y);
-            # end added by Chris
+            # # added by Chris
+            # if way_number == 1:
+            #     dist = abs(goal_pose.y - self.pose.y);
+            # elif way_number == 2:
+            #     dist = abs(goal_pose.x - self.pose.x);
+            # elif way_number == 3:
+            #     dist = abs(goal_pose.y - self.pose.y);
+            # elif way_number == 4:
+            #     dist = abs(goal_pose.x - self.pose.x);
+            # # end added by Chris
 
             # Publishing left and right velocities
-            # dist = sqrt((goal_pose.x - self.pose.x) ** 2 + (goal_pose.y - self.pose.y) ** 2)
+            dist = sqrt((goal_pose.x - self.pose.x) ** 2 + (goal_pose.y - self.pose.y) ** 2)
             self.pubMotors(linearx, angularz)
             self.rate.sleep()
 

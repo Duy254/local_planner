@@ -51,11 +51,11 @@ if (len(sys.argv) > 1):
 
     for i in range (1, len(coordCsv)):
          #omit 1st and last point from angle calculations
+
         if i in range(0, len(coordCsv) - 1):
             currVect = (coordCsv[i][0] - coordCsv[i-1][0], coordCsv[i][1] - coordCsv[i-1][1])
             nextVect = (coordCsv[i+1][0] - coordCsv[i][0], coordCsv[i+1][1] - coordCsv[i][1])
             angle = angle_between(currVect, nextVect)
-
 
         else:
             angle = 0

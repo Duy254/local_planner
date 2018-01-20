@@ -1,13 +1,26 @@
-/waypoints/1/x: -20.0
-/waypoints/1/y: 0
+/waypoints/1/x: -11
+/waypoints/1/y: 8
 /waypoints/1/theta: -1.57079632679
-/waypoints/2/x: -20.0
-/waypoints/2/y: 8.3
-/waypoints/2/theta: -1.57079632679
-/waypoints/3/x: -11
-/waypoints/3/y: 9.0
+/waypoints/2/x: -20
+/waypoints/2/y: 7.5
+/waypoints/2/theta: 1.57079632679
+/waypoints/3/x: -20
+/waypoints/3/y: -0.3
 /waypoints/3/theta: 1.57079632679
-/waypoints/4/x: -11.5
-/waypoints/4/y: 23.5
+/waypoints/4/x: -9
+/waypoints/4/y: -0.7
 /waypoints/4/theta: 0
+
+# /waypoints/1/x: -20.0
+# /waypoints/1/y: 0
+# /waypoints/1/theta: -1.57079632679
+# /waypoints/2/x: -20.0
+# /waypoints/2/y: 8.3
+# /waypoints/2/theta: -1.57079632679
+# /waypoints/3/x: -11
+# /waypoints/3/y: 9.0
+# /waypoints/3/theta: 1.57079632679
+# /waypoints/4/x: -11.5
+# /waypoints/4/y: 23.5
+# /waypoints/4/theta: 0
 

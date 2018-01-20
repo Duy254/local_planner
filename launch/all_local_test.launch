@@ -31,6 +31,6 @@
 
 <!--launch only encoder localization-->
 
- <node name="EncoderLoc" pkg="local_planner" type="EncoderLoc.py" output = "screen"></node>>
+ <node name="EncoderLoc" pkg="local_planner" type="EncoderLoc2.py" output = "screen"></node>>
 
 </launch>
